@@ -493,9 +493,12 @@
 
             console.log(signal);
 
-            var messageArray = signal.message.split("--delimeter--");
-            var messageTxt = messageArray[0];
-            var messageStatus = messageArray[1];
+            var isNACK = signal.message.search("NACK") > -1;
+            var messageTxt = signal.message;
+
+            console.log(signal.message.search("NACK"));
+
+
 
             // Draw the text in the middle of the signal
 //			this.draw_text(x, y, signal.message, this._font);
@@ -507,7 +510,7 @@
 
 //			line.attr((messageStatus === "SUCCESS")?LINE_GREEN:LINE_RED);
 
-            var color = (messageStatus === "SUCCESS")?'#00DA75':'#E82C0C';
+            var color = isNACK?'#E82C0C':'#00DA75';
 
             line.attr({
                 'stroke-dasharray': this.line_types[signal.linetype],
@@ -556,6 +559,7 @@
          * TODO Horz center the text when it's multi-line print
          */
         draw_text : function (x, y, text, font) {
+
             var paper = this._paper;
             var f = font || {};
             var t;
@@ -580,14 +584,19 @@
             var w = box.width  - 2 * margin;
             var h = box.height - 2 * margin;
 
+
+            var isInQueue = text.search("queue") > -1;
+            var fillColor = (isInQueue)?'#ffde3a':'#fbfbfb';
+
             // Draw inner box
             var rect = this.draw_rect(x, y, w, h);
 //			rect.attr(LINE);
-            rect.attr({'fill':'#fbfbfb','stroke': '#ddd', 'stroke-width': 1});
+            rect.attr({'fill':fillColor,'stroke': '#ddd', 'stroke-width': 1});
 
             // Draw text (in the center)
             x = getCenterX(box);
             y = getCenterY(box);
+
 
             this.draw_text(x, y, text, font);
         }
