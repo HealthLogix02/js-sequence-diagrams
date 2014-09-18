@@ -64,6 +64,10 @@
         'fill': "#fff"
     };
 
+    // TYPOGRAPHY
+
+    var MESSAGE_FONT_SIZE = 12;
+
     function AssertException(message) { this.message = message; }
     AssertException.prototype.toString = function () {
         return 'AssertException: ' + this.message;
@@ -491,24 +495,20 @@
             var x = (bX - aX) / 2 + aX;
             var y = offsetY + SIGNAL_MARGIN + 2*SIGNAL_PADDING;
 
-            console.log(signal);
-
             var isNACK = signal.message.search("NACK") > -1;
             var messageTxt = signal.message;
 
-            console.log(signal.message.search("NACK"));
-
+            var msgFont = this._font;
+            msgFont['font-size'] = MESSAGE_FONT_SIZE;
+            msgFont.title = messageTxt;
 
 
             // Draw the text in the middle of the signal
-//			this.draw_text(x, y, signal.message, this._font);
-            this.draw_text(x, y, messageTxt, this._font);
+            this.draw_text(x, y, messageTxt, msgFont);
 
             // Draw the line along the bottom of the signal
             y = offsetY + signal.height - SIGNAL_MARGIN - SIGNAL_PADDING;
             var line = this.draw_line(aX, y, bX, y);
-
-//			line.attr((messageStatus === "SUCCESS")?LINE_GREEN:LINE_RED);
 
             var color = isNACK?'#E82C0C':'#00DA75';
 
@@ -562,6 +562,7 @@
 
             var paper = this._paper;
             var f = font || {};
+
             var t;
             if (f._obj) {
                 t = paper.print_center(x, y, text, f._obj, f['font-size']);
