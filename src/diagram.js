@@ -44,8 +44,10 @@
 
 	Diagram.Actor = function(alias, name, index) {
 		this.alias = alias;
-		this.name  = name;
+		this.fullName = name;
+		this.name  = truncateText(name);
 		this.index = index;
+
 	};
 
 	Diagram.Signal = function(actorA, signaltype, actorB, message) {
@@ -54,7 +56,9 @@
 		this.actorB     = actorB;
 		this.linetype   = signaltype & 3;
 		this.arrowtype  = (signaltype >> 2) & 3;
-		this.message    = message;
+		this.fullMessage = message;
+		var messageTxt = message.split(" | ")[0];
+		this.message    = truncateText(messageTxt);
 	};
 
 	Diagram.Signal.prototype.isSelf = function() {
@@ -65,7 +69,9 @@
 		this.type      = "Note";
 		this.actor     = actor;
 		this.placement = placement;
-		this.message   = message;
+		this.fullMessage = message;
+		var messageTxt = message.split(" | ")[0];
+		this.message   = truncateText(messageTxt);
 
 		if (this.hasManyActors() && actor[0] == actor[1]) {
 			throw new Error("Note should be over two different actors");
@@ -91,6 +97,12 @@
 		RIGHTOF : 1,
 		OVER    : 2
 	};
+
+	var MAX_TEXT_LENGTH = 30;
+
+	function truncateText(text){
+		return (text.length > MAX_TEXT_LENGTH)?text.substring(0,MAX_TEXT_LENGTH - 3) + " ... ":text;
+	}
 
 	/** The following is included by jspp */
 	/*> ../build/grammar.js */

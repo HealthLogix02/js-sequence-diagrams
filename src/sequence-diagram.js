@@ -34,6 +34,8 @@
     var TITLE_MARGIN   = 0;
     var TITLE_PADDING  = 5;
 
+    var ACTOR_DISTANCE_CONSTANT = 240;
+
     var SELF_SIGNAL_WIDTH = 20; // How far out a self signal goes
 
     var PLACEMENT = Diagram.PLACEMENT;
@@ -63,10 +65,6 @@
     var RECT = {
         'fill': "#fff"
     };
-
-    // TYPOGRAPHY
-
-    var MESSAGE_FONT_SIZE = 12;
 
     function AssertException(message) { this.message = message; }
     AssertException.prototype.toString = function () {
@@ -384,18 +382,20 @@
                 a.x = Math.max(actors_x, a.x);
 
                 // TODO This only works if we loop in sequence, 0, 1, 2, etc
-                _.each(a.distances, function(distance, b) {
+                _.each(a.distances, function(distance, i) {
                     // lodash (and possibly others) do not like sparse arrays
                     // so sometimes they return undefined
                     if (typeof distance == "undefined")
                         return;
 
-                    b = actors[b];
-                    distance = Math.max(distance, a.width / 2, b.width / 2);
-                    b.x = Math.max(b.x, a.x + a.width/2 + distance - b.width/2);
+                    var b = actors[i];
+                    distance = (b.index - a.index) * ACTOR_DISTANCE_CONSTANT;
+                    b.x = (a.x + a.width/2 + distance - b.width/2);
+
                 });
 
                 actors_x = a.x + a.width + a.padding_right;
+
             }, this);
 
             diagram.width = Math.max(actors_x, diagram.width);
@@ -435,7 +435,11 @@
         draw_actor : function (actor, offsetY, height) {
             actor.y      = offsetY;
             actor.height = height;
-            this.draw_text_box(actor, actor.name, ACTOR_MARGIN, ACTOR_PADDING, this._font);
+
+            var font = this._font;
+            font.title = actor.fullName;
+
+            this.draw_text_box(actor, actor.name, ACTOR_MARGIN, ACTOR_PADDING, font);
         },
 
         draw_signals : function (offsetY) {
@@ -499,9 +503,7 @@
             var messageTxt = signal.message;
 
             var msgFont = this._font;
-            msgFont['font-size'] = MESSAGE_FONT_SIZE;
-            msgFont.title = messageTxt;
-
+            msgFont.title = "" + signal.fullMessage;
 
             // Draw the text in the middle of the signal
             this.draw_text(x, y, messageTxt, msgFont);
@@ -550,6 +552,8 @@
                     throw new Error("Unhandled note placement:" + note.placement);
             }
 
+
+
             this.draw_text_box(note, note.message, NOTE_MARGIN, NOTE_PADDING, this._font);
         },
 
@@ -573,7 +577,6 @@
             // draw a rect behind it
             var bb = t.getBBox();
             var r = paper.rect(bb.x, bb.y, bb.width, bb.height);
-//			r.attr({'fill': "#fff", 'stroke': 'none'});
             r.attr({'stroke': 'none'});
 
             t.toFront();
@@ -585,21 +588,29 @@
             var w = box.width  - 2 * margin;
             var h = box.height - 2 * margin;
 
+            var fullMessageTxt = "" + box.fullMessage;
 
-            var isInQueue = text.search("queue") > -1;
+
+            var isInQueue = fullMessageTxt.search("queue") > -1;
             var fillColor = (isInQueue)?'#ffde3a':'#fbfbfb';
+
+            var noteFont = font;
+
+            if(box.type == "Note")
+              {
+                // noteFont['font-size'] = MESSAGE_FONT_SIZE;
+                noteFont.title = fullMessageTxt;
+
+              }
 
             // Draw inner box
             var rect = this.draw_rect(x, y, w, h);
-//			rect.attr(LINE);
             rect.attr({'fill':fillColor,'stroke': '#ddd', 'stroke-width': 1});
 
             // Draw text (in the center)
             x = getCenterX(box);
             y = getCenterY(box);
-
-
-            this.draw_text(x, y, text, font);
+            this.draw_text(x, y, text, noteFont);
         }
 
         /**
@@ -627,9 +638,7 @@
 
         init_font : function() {
             this._font = {
-//				'font-size': 16,
-                'font-size': 16,
-//				'font-family': 'Andale Mono, monospace'
+                'font-size': 13,
                 'font-family': 'HelveticaNeue-Light, Helvetica Neue Light, Helvetica Neue, Helvetica, Arial, Lucida Grande, sans-serif',
                 'fill': '#333'
             };
