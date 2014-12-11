@@ -36,7 +36,7 @@
   var TITLE_MARGIN   = 0;
   var TITLE_PADDING  = 5;
 
-
+  var TOOLTIP_MESSAGE = "Click to view";
 
   var ACTOR_DISTANCE_CONSTANT = 240;
 
@@ -443,8 +443,6 @@
       var font = this._font;
       font.title = actor.fullName;
 
-      console.log(actor);
-
       this.draw_text_box(actor, actor.name, ACTOR_MARGIN, ACTOR_PADDING, font);
     },
 
@@ -508,16 +506,29 @@
 
       var isNACK = signal.message.search("NACK") > -1;
       var messageTxt = signal.message;
+      var fullMessageTxt = signal.fullMessage;
+
+      var messageId = fullMessageTxt.split(" | ")[1];
+      var hl7Id = fullMessageTxt.split(" | ")[2];
+
+      if(hl7Id){
+        messageTxt += ' (HL7)';
+      }
 
       var msgFont = this._font;
-      msgFont.title = "" + signal.fullMessage;
+      msgFont.title = TOOLTIP_MESSAGE;
+      msgFont.fill = (messageId)?"#0088cc":"black"; // clickable object text color
 
       // Draw the text in the middle of the signal
-      this.draw_text(x, y, messageTxt, msgFont);
+      var t = this.draw_text(x, y, messageTxt, msgFont);
 
       // Draw the line along the bottom of the signal
       y = offsetY + signal.height - SIGNAL_MARGIN - SIGNAL_PADDING;
       var line = this.draw_line(aX, y, bX, y);
+
+      var paper = this._paper;
+
+      var icon = paper.image("../../../images/skin/database_save.png", 16,16, 0, 0);
 
       var color = isNACK?'#E82C0C':'#00DA75';
 
@@ -529,9 +540,31 @@
 
       });
 
+      if(messageId)
+      {
+        this.addClickHandler({paper: paper, displayObjects: [t, line, icon], id: messageId});
+      }
+
+
       //var ARROW_SIZE = 16;
       //var dir = this.actorA.x < this.actorB.x ? 1 : -1;
       //draw_arrowhead(bX, offsetY, ARROW_SIZE, dir);
+    },
+
+    addClickHandler: function () {
+      var paper = arguments[0].paper;
+      var displayObjects = arguments[0].displayObjects;
+      var messageId = arguments[0].id;
+
+      var button = paper.set(displayObjects).attr({cursor: "pointer"});
+
+      var diagram = this.diagram;
+
+      button.click(function(){
+        diagram.showMessage(messageId);
+      });
+
+      return button;
     },
 
     draw_note : function (note, offsetY) {
@@ -559,8 +592,6 @@
           throw new Error("Unhandled note placement:" + note.placement);
       }
 
-
-
       this.draw_text_box(note, note.message, NOTE_MARGIN, NOTE_PADDING, this._font);
     },
 
@@ -587,6 +618,8 @@
       r.attr({'stroke': 'none'});
 
       t.toFront();
+
+      return t;
     },
 
     draw_text_box : function (box, text, margin, padding, font) {
@@ -597,16 +630,22 @@
 
       var fullMessageTxt = "" + box.fullMessage;
 
+      var messageId = fullMessageTxt.split(" | ")[1];
+      var hl7Id = fullMessageTxt.split(" | ")[2];
+
 
       var isInQueue = fullMessageTxt.search("queue") > -1;
       var fillColor = (isInQueue)?'#ffde3a':'#fbfbfb';
 
       var noteFont = font;
 
+
+      noteFont.fill = (messageId)?"#0088cc":"black"; // clickable object text color
+
       if(box.type == "Note")
       {
         // noteFont['font-size'] = MESSAGE_FONT_SIZE;
-        noteFont.title = fullMessageTxt;
+        noteFont.title = TOOLTIP_MESSAGE;
 
       }
 
@@ -617,7 +656,12 @@
       // Draw text (in the center)
       x = getCenterX(box);
       y = getCenterY(box);
-      this.draw_text(x, y, text, noteFont);
+      var t = this.draw_text(x, y, text, noteFont);
+
+      if(messageId)
+      {
+        this.addClickHandler({paper: this._paper, displayObjects: [t, rect], id: messageId});
+      }
     }
 
     /**
